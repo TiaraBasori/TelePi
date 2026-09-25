@@ -503,6 +503,27 @@ export function createBot(
 		await next();
 	});
 
+	const reactToIncomingMessage = (ctx: Context): void => {
+		if (!config.reactionOnReceipt) {
+			return;
+		}
+
+		const chatId = ctx.chat?.id;
+		const messageId = ctx.message?.message_id;
+		if (chatId === undefined || messageId === undefined) {
+			return;
+		}
+
+		void bot.api
+			.setMessageReaction(chatId, messageId, [{ type: "emoji", emoji: "👀" }])
+			.catch((error: unknown) => {
+				console.error(
+					"Failed to react to incoming message:",
+					formatError(error),
+				);
+			});
+	};
+
 	const chatTaskRunner = createChatTaskRunner({
 		beginProcessing: (target, promptText) =>
 			chatState.beginProcessing(target, promptText),
@@ -1428,6 +1449,8 @@ export function createBot(
 			return;
 		}
 
+		reactToIncomingMessage(ctx);
+
 		const contextKey = getContextKey(target);
 		const normalizedSlashCommand = normalizeSlashCommand(
 			userText,
@@ -1508,6 +1531,8 @@ export function createBot(
 		if (!target) {
 			return;
 		}
+
+		reactToIncomingMessage(ctx);
 
 		if (isBusy(target)) {
 			await sendBusyReply(ctx);
@@ -1599,6 +1624,8 @@ export function createBot(
 		if (!target) {
 			return;
 		}
+
+		reactToIncomingMessage(ctx);
 
 		const contextKey = getContextKey(target);
 		if (isBusy(target)) {

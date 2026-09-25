@@ -17,6 +17,7 @@ export interface TelePiConfig {
   piSessionPath?: string;
   piModel?: string;
   toolVerbosity: ToolVerbosity;
+  reactionOnReceipt: boolean;
   promptInboxDir?: string;
   promptInboxIntervalMs: number;
 }
@@ -46,6 +47,10 @@ export function loadConfig(): TelePiConfig {
   const piSessionPath = optionalString(process.env.PI_SESSION_PATH);
   const piModel = optionalString(process.env.PI_MODEL);
   const toolVerbosity = parseToolVerbosity(optionalString(process.env.TOOL_VERBOSITY));
+  const reactionOnReceipt = parseBooleanFlag(
+    "TELEPI_REACTION_ON_RECEIPT",
+    process.env.TELEPI_REACTION_ON_RECEIPT,
+  );
   const promptInboxDir = resolveOptionalPath(process.env.TELEPI_PROMPT_INBOX_DIR);
   const promptInboxIntervalMs = parsePromptInboxIntervalMs(optionalString(process.env.TELEPI_PROMPT_INBOX_INTERVAL_MS));
 
@@ -57,6 +62,7 @@ export function loadConfig(): TelePiConfig {
     piSessionPath,
     piModel,
     toolVerbosity,
+    reactionOnReceipt,
     promptInboxDir,
     promptInboxIntervalMs,
   };
@@ -221,6 +227,30 @@ export function parseAllowedUserIds(raw: string): number[] {
   }
 
   return ids;
+}
+
+function parseBooleanFlag(name: string, raw: string | undefined): boolean {
+  if (!raw) {
+    return false;
+  }
+
+  switch (raw.trim().toLowerCase()) {
+    case "1":
+    case "true":
+    case "yes":
+    case "on":
+      return true;
+    case "0":
+    case "false":
+    case "no":
+    case "off":
+      return false;
+    default:
+      console.warn(
+        `Invalid ${name} value: "${raw}". Expected a boolean (true/false). Falling back to "false".`
+      );
+      return false;
+  }
 }
 
 function parseToolVerbosity(raw: string | undefined): ToolVerbosity {

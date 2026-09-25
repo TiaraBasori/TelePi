@@ -327,6 +327,16 @@ TELEPI_TRANSCRIPTION_PROMPT="Conversation about TelePi and Pi coding-agent sessi
 
 TelePi removes URL credentials, queries, and fragments from endpoint details shown in errors.
 
+### Reaction on receipt
+
+TelePi can react with 👀 to incoming messages so you can see at a glance that your prompt was received. Enable it in your TelePi config file (`~/.config/telepi/config.env` in installed mode, or `.env` in a source checkout):
+
+```dotenv
+TELEPI_REACTION_ON_RECEIPT=true
+```
+
+The flag accepts `true`/`false` (also `1`/`0`, `yes`/`no`, `on`/`off`) and defaults to `false`. Reactions are best-effort: if Telegram rejects the reaction, TelePi logs the failure and continues processing the prompt.
+
 ## Session Tree Navigation
 
 Every prompt and response in Pi is stored as a tree of entries. TelePi exposes this tree so you can review history and jump back to any point to create a new branch.

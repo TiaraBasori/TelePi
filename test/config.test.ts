@@ -27,6 +27,7 @@ describe("loadConfig", () => {
     delete process.env.PI_MODEL;
     delete process.env.PI_SESSION_PATH;
     delete process.env.TOOL_VERBOSITY;
+    delete process.env.TELEPI_REACTION_ON_RECEIPT;
     delete process.env.TELEPI_CONFIG;
     delete process.env.TELEPI_WORKSPACE;
     delete process.env.TELEPI_PROMPT_INBOX_DIR;
@@ -58,6 +59,7 @@ describe("loadConfig", () => {
       piSessionPath: "/tmp/session.jsonl",
       piModel: "anthropic/claude-sonnet-4-5",
       toolVerbosity: "all",
+      reactionOnReceipt: false,
       promptInboxDir: undefined,
       promptInboxIntervalMs: 60000,
     });
@@ -128,6 +130,51 @@ describe("loadConfig", () => {
     expect(config.toolVerbosity).toBe("summary");
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('Invalid TOOL_VERBOSITY value: "loud"'),
+    );
+  });
+
+  it("defaults TELEPI_REACTION_ON_RECEIPT to false", () => {
+    process.env.TELEGRAM_BOT_TOKEN = "bot-token";
+    process.env.TELEGRAM_ALLOWED_USER_IDS = "123";
+
+    expect(loadConfig().reactionOnReceipt).toBe(false);
+  });
+
+  it.each(["true", "1", "yes", "on", "TRUE", "Yes"] as const)(
+    "accepts TELEPI_REACTION_ON_RECEIPT=%s as true",
+    (value) => {
+      process.env.TELEGRAM_BOT_TOKEN = "bot-token";
+      process.env.TELEGRAM_ALLOWED_USER_IDS = "123";
+      process.env.TELEPI_REACTION_ON_RECEIPT = value;
+
+      expect(loadConfig().reactionOnReceipt).toBe(true);
+    },
+  );
+
+  it.each(["false", "0", "no", "off", "FALSE", "Off"] as const)(
+    "accepts TELEPI_REACTION_ON_RECEIPT=%s as false",
+    (value) => {
+      process.env.TELEGRAM_BOT_TOKEN = "bot-token";
+      process.env.TELEGRAM_ALLOWED_USER_IDS = "123";
+      process.env.TELEPI_REACTION_ON_RECEIPT = value;
+
+      expect(loadConfig().reactionOnReceipt).toBe(false);
+    },
+  );
+
+  it("falls back to false for an invalid TELEPI_REACTION_ON_RECEIPT value", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    process.env.TELEGRAM_BOT_TOKEN = "bot-token";
+    process.env.TELEGRAM_ALLOWED_USER_IDS = "123";
+    process.env.TELEPI_REACTION_ON_RECEIPT = "maybe";
+
+    const config = loadConfig();
+
+    expect(config.reactionOnReceipt).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Invalid TELEPI_REACTION_ON_RECEIPT value: "maybe"',
+      ),
     );
   });
 
