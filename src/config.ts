@@ -18,6 +18,7 @@ export interface TelePiConfig {
   piModel?: string;
   toolVerbosity: ToolVerbosity;
   reactionOnReceipt: boolean;
+  reactionEmojis: string[];
   promptInboxDir?: string;
   promptInboxIntervalMs: number;
 }
@@ -34,6 +35,7 @@ export interface TelePiConfigPathInfo {
 
 const DEFAULT_PROMPT_INBOX_INTERVAL_MS = 60_000;
 const MIN_PROMPT_INBOX_INTERVAL_MS = 1_000;
+const DEFAULT_REACTION_EMOJIS = ["👀"];
 
 export function loadConfig(): TelePiConfig {
   const envPath = getConfigEnvPathInfo().resolvedPath;
@@ -51,6 +53,7 @@ export function loadConfig(): TelePiConfig {
     "TELEPI_REACTION_ON_RECEIPT",
     process.env.TELEPI_REACTION_ON_RECEIPT,
   );
+  const reactionEmojis = parseReactionEmojis(process.env.TELEPI_REACTION_EMOJIS);
   const promptInboxDir = resolveOptionalPath(process.env.TELEPI_PROMPT_INBOX_DIR);
   const promptInboxIntervalMs = parsePromptInboxIntervalMs(optionalString(process.env.TELEPI_PROMPT_INBOX_INTERVAL_MS));
 
@@ -63,6 +66,7 @@ export function loadConfig(): TelePiConfig {
     piModel,
     toolVerbosity,
     reactionOnReceipt,
+    reactionEmojis,
     promptInboxDir,
     promptInboxIntervalMs,
   };
@@ -251,6 +255,23 @@ function parseBooleanFlag(name: string, raw: string | undefined): boolean {
       );
       return false;
   }
+}
+
+/**
+ * Parses a comma- or whitespace-separated list of reaction emojis.
+ * U+FE0F variation selectors are stripped because Telegram's reaction set
+ * uses the bare code points (e.g. "❤", not "❤️").
+ */
+function parseReactionEmojis(raw: string | undefined): string[] {
+  const emojis = [
+    ...new Set(
+      (raw ?? "")
+        .replace(/\uFE0F/g, "")
+        .split(/[\s,]+/)
+        .filter(Boolean),
+    ),
+  ];
+  return emojis.length > 0 ? emojis : [...DEFAULT_REACTION_EMOJIS];
 }
 
 function parseToolVerbosity(raw: string | undefined): ToolVerbosity {

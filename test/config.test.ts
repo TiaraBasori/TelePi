@@ -28,6 +28,7 @@ describe("loadConfig", () => {
     delete process.env.PI_SESSION_PATH;
     delete process.env.TOOL_VERBOSITY;
     delete process.env.TELEPI_REACTION_ON_RECEIPT;
+    delete process.env.TELEPI_REACTION_EMOJIS;
     delete process.env.TELEPI_CONFIG;
     delete process.env.TELEPI_WORKSPACE;
     delete process.env.TELEPI_PROMPT_INBOX_DIR;
@@ -60,6 +61,7 @@ describe("loadConfig", () => {
       piModel: "anthropic/claude-sonnet-4-5",
       toolVerbosity: "all",
       reactionOnReceipt: false,
+      reactionEmojis: ["👀"],
       promptInboxDir: undefined,
       promptInboxIntervalMs: 60000,
     });
@@ -176,6 +178,28 @@ describe("loadConfig", () => {
         'Invalid TELEPI_REACTION_ON_RECEIPT value: "maybe"',
       ),
     );
+  });
+
+  it("defaults TELEPI_REACTION_EMOJIS to 👀", () => {
+    process.env.TELEGRAM_BOT_TOKEN = "bot-token";
+    process.env.TELEGRAM_ALLOWED_USER_IDS = "123";
+
+    expect(loadConfig().reactionEmojis).toEqual(["👀"]);
+  });
+
+  it.each([
+    ["👍", ["👍"]],
+    ["👀,👍, 🔥", ["👀", "👍", "🔥"]],
+    ["👀 👍  🔥", ["👀", "👍", "🔥"]],
+    ["👍,👍,🔥", ["👍", "🔥"]],
+    ["❤️,❤️‍🔥", ["❤", "❤‍🔥"]],
+    [" , ", ["👀"]],
+  ] as const)("parses TELEPI_REACTION_EMOJIS=%j", (value, expected) => {
+    process.env.TELEGRAM_BOT_TOKEN = "bot-token";
+    process.env.TELEGRAM_ALLOWED_USER_IDS = "123";
+    process.env.TELEPI_REACTION_EMOJIS = value;
+
+    expect(loadConfig().reactionEmojis).toEqual(expected);
   });
 
   it("loads values from TELEPI_CONFIG without overwriting existing environment variables", () => {

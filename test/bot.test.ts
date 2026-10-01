@@ -109,6 +109,7 @@ function createConfig(overrides: Partial<TelePiConfig> = {}): TelePiConfig {
 		piModel: undefined,
 		toolVerbosity: "summary",
 		reactionOnReceipt: false,
+		reactionEmojis: ["👀"],
 		promptInboxDir: undefined,
 		promptInboxIntervalMs: 60000,
 		...overrides,
@@ -4410,6 +4411,26 @@ describe("createBot", () => {
 			ALLOWED_CHAT_ID,
 			1,
 			[{ type: "emoji", emoji: "👀" }],
+		);
+	});
+
+	it("reacts with a configured emoji picked at random", async () => {
+		const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.99);
+		const { bot, api } = setupBot({
+			configOverrides: {
+				reactionOnReceipt: true,
+				reactionEmojis: ["👍", "🔥", "🎉"],
+			},
+		});
+
+		await bot.handleUpdate(createTestUpdate({ message: { text: "hello" } }));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		randomSpy.mockRestore();
+
+		expect(api.setMessageReaction).toHaveBeenCalledWith(
+			ALLOWED_CHAT_ID,
+			1,
+			[{ type: "emoji", emoji: "🎉" }],
 		);
 	});
 
